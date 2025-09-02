@@ -188,9 +188,14 @@ def checkout():
 # --- Rotas de Webhook e Retorno do Pagamento ---
 
 @app.route("/verificar_pagamento/<int:pedido_id>")
-@login_required
+# A LINHA @login_required FOI REMOVIDA DAQUI
 def verificar_pagamento(pedido_id):
+    # Verificamos primeiro se o utilizador está autenticado, para não dar erro
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'Autenticação necessária'}), 401
+    
     pedido = Pedido.query.get_or_404(pedido_id)
+    # A verificação de segurança continua aqui, garantindo que o utilizador só pode ver os seus pedidos
     if pedido.user_id != current_user.id:
         return jsonify({'error': 'Acesso não autorizado'}), 403
     return jsonify({'status': pedido.status})
