@@ -224,6 +224,10 @@ def compra_certa():
         
     return render_template("compracerta.html", pedido_id=pedido_id)
 
+@app.route("/compraerrada")
+def compra_errada():
+    return render_template("compraerrada.html")
+
 # ROTA TEMPORÁRIA PARA CRIAR O PRIMEIRO ADMIN - REMOVER DEPOIS DE USAR!
 @app.route("/setup-admin/<string:secret_key>")
 def setup_admin(secret_key):
