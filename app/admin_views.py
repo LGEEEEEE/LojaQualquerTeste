@@ -10,7 +10,8 @@ class SecureAdminIndexView(AdminIndexView):
         return current_user.is_authenticated and current_user.is_admin
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login', next=request.url))
+        # CORRIGIDO AQUI
+        return redirect(url_for('main.login', next=request.url))
 
 # Classe para proteger as páginas dos modelos (produtos, utilizadores, etc.)
 class SecureModelView(ModelView):
@@ -48,4 +49,5 @@ class SecureModelView(ModelView):
 
     # Esta função é chamada se a verificação acima falhar
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login', next=request.url))
+        # CORRIGIDO AQUI
+        return redirect(url_for('main.login', next=request.url))

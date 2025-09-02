@@ -21,14 +21,14 @@
                     <td>{{ produto.nome }}</td>
                     <td class="text-center">R$ {{ "%.2f"|format(produto.preco) }}</td>
                     <td class="text-center">
-                        <form action="{{ url_for('update_cart', produto_id=produto.id) }}" method="POST" class="d-flex justify-content-center">
+                        <form action="{{ url_for('main.update_cart', produto_id=produto.id) }}" method="POST" class="d-flex justify-content-center">
                             <input type="number" name="quantidade" class="form-control form-control-sm me-2" value="{{ cart[produto.id|string] }}" min="1">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Atualizar</button>
                         </form>
                     </td>
                     <td class="text-center">R$ {{ "%.2f"|format(produto.preco * cart[produto.id|string]) }}</td>
                     <td class="text-center">
-                        <form action="{{ url_for('remove_from_cart', produto_id=produto.id) }}" method="POST">
+                        <form action="{{ url_for('main.remove_from_cart', produto_id=produto.id) }}" method="POST">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
                         </form>
                     </td>
@@ -39,7 +39,7 @@
 
         <div class="text-end">
             <h3>Total: R$ {{ "%.2f"|format(total) }}</h3>
-            <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg mt-3">Finalizar Compra e Pagar</a>
+            <a href="{{ url_for('main.checkout') }}" class="btn btn-success btn-lg mt-3">Finalizar Compra e Pagar</a>
         </div>
     {% else %}
         <div class="alert alert-info">
