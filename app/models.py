@@ -20,8 +20,7 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
-    # A relação para aceder facilmente aos pedidos deste utilizador.
-    # O backref='user' cria automaticamente o atributo 'pedido.user' no modelo Pedido.
+    # Relação: um usuário pode ter vários pedidos
     pedidos = db.relationship('Pedido', backref='user', lazy=True)
 
     def __repr__(self):
@@ -33,8 +32,9 @@ class Pedido(db.Model):
     data_pedido = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     status = db.Column(db.String(30), nullable=False, default='Pendente')
     total = db.Column(db.Numeric(10, 2), nullable=False)
+    token = db.Column(db.String(64), nullable=False)  # 🔑 Token único para validar retorno seguro
 
-    # A relação para aceder facilmente aos itens deste pedido
+    # Relação: um pedido pode ter vários itens
     itens = db.relationship('ItemPedido', backref='pedido', lazy=True, cascade="all, delete-orphan")
     
     def __repr__(self):

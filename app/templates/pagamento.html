@@ -17,20 +17,24 @@
 
 
 {% block scripts %}
+<script src="https://sdk.mercadopago.com/js/v2"></script>
+
 <script>
+    // Obtém as variáveis do Flask com segurança
     const publicKey = '{{ public_key }}';
     const preferenceId = '{{ preference_id }}';
     const pedidoId = '{{ pedido_id }}';
-    // VERSÃO CORRETA: |tojson garante que o número seja formatado para JavaScript (com ponto decimal)
     const totalAmount = {{ total | tojson | safe }};
 
-    if (!publicKey || !preferenceId || !totalAmount) {
-        console.error("ERRO CRÍTICO: Chave Pública, ID da Preferência ou Valor Total não foram passados para o template!");
+    // Verifica se todas as variáveis necessárias estão presentes
+    if (!publicKey || !preferenceId || !totalAmount || !pedidoId) {
+        console.error("ERRO CRÍTICO: Chave Pública, ID da Preferência, ID do Pedido ou Valor Total não foram passados para o template!");
         alert("Ocorreu um erro ao carregar o pagamento. Verifique o console para mais detalhes.");
     } else {
         const mp = new MercadoPago(publicKey);
         const bricksBuilder = mp.bricks();
         
+        // Função para renderizar o Brick de Pagamento
         const renderPaymentBrick = async (builder) => {
             const settings = {
                 initialization: {
@@ -38,48 +42,60 @@
                     preferenceId: preferenceId,
                 },
                 customization: {
-                    visual: { style: { theme: 'default' } }
+                    visual: { style: { theme: 'bootstrap' } } // Usando tema bootstrap
                 },
                 callbacks: {
                     onReady: () => {
                         console.log("Brick de pagamento pronto!");
-                        startPolling();
+                        // Inicia a verificação do status do pagamento assim que o brick estiver pronto
+                        startPolling(); 
                     },
                     onError: (error) => {
                         console.error("Erro no callback do Brick:", error);
                     },
+                    // O onSubmit não é necessário aqui, pois a confirmação é feita pelo webhook
                 },
             };
+            // Cria e renderiza o brick
             window.paymentBrickController = await builder.create('payment', 'payment-brick-container', settings);
         };
 
+        // Chama a função para renderizar o brick
         renderPaymentBrick(bricksBuilder).catch(error => {
             console.error("ERRO ao tentar renderizar o Payment Brick:", error);
         });
     }
 
-    // Funções para verificar o pagamento e redirecionar
+    // Função para verificar o status do pagamento em intervalos regulares (Polling)
     function startPolling() {
         const interval = setInterval(async () => {
             try {
+                // Faz uma requisição para a nossa nova rota no backend
                 const response = await fetch(`/verificar_pagamento/${pedidoId}`);
+                if (!response.ok) throw new Error('Falha na resposta do servidor');
+                
                 const data = await response.json();
+
+                // Se o status for 'Pago', para a verificação e mostra a mensagem de sucesso
                 if (data.status === 'Pago') {
                     clearInterval(interval);
                     showSuccessAndRedirect();
                 }
             } catch (error) {
                 console.error('Erro ao verificar o estado do pagamento:', error);
-                clearInterval(interval);
+                clearInterval(interval); // Para a verificação em caso de erro
             }
-        }, 5000);
+        }, 3000); // Verifica a cada 3 segundos
     }
 
+    // Função para mostrar a mensagem de sucesso e redirecionar o usuário
     function showSuccessAndRedirect() {
-        document.getElementById('payment-brick-container').style.display = 'none';
-        document.getElementById('success-message').style.display = 'block';
+        document.getElementById('payment-brick-container').style.display = 'none'; // Esconde o formulário de pagamento
+        document.getElementById('success-message').style.display = 'block';   // Mostra a mensagem de sucesso
+        
+        // Aguarda 3 segundos e redireciona para a página 'minha_conta'
         setTimeout(() => {
-            window.location.href = "{{ url_for('minha_conta') }}";
+            window.location.href = "{{ url_for('main.minha_conta') }}";
         }, 3000);
     }
 </script>
