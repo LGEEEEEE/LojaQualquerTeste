@@ -147,14 +147,15 @@ def checkout():
             )
             db.session.add(item)
         
-        ngrok_url = os.getenv("NGROK_URL")
-        if not ngrok_url:
-            raise ValueError("A variável de ambiente NGROK_URL não foi configurada no arquivo .env")
+        # Usaremos a SITE_URL em produção, ou a NGROK_URL em desenvolvimento
+        base_url = os.getenv("SITE_URL") or os.getenv("NGROK_URL")
+        if not base_url:
+            raise ValueError("Nenhuma URL base (SITE_URL ou NGROK_URL) foi configurada.")
 
         back_urls = {
-            "success": f"{ngrok_url}{url_for('compra_certa')}",
-            "failure": f"{ngrok_url}{url_for('compra_errada')}",
-            "pending": f"{ngrok_url}{url_for('minha_conta')}"
+            "success": f"{base_url}{url_for('compra_certa')}",
+            "failure": f"{base_url}{url_for('compra_errada')}",
+            "pending": f"{base_url}{url_for('minha_conta')}"
         }
         
         preference_data = {
@@ -164,7 +165,7 @@ def checkout():
             "payer": {
                 "email": current_user.email
             },
-            "notification_url": f"{ngrok_url}/receber_notificacao_webhook",
+            "notification_url": f"{base_url}/receber_notificacao_webhook",
             "external_reference": f"{novo_pedido.id}-{int(time.time())}",
         }
         
@@ -196,7 +197,6 @@ def receber_notificacao():
             payment_info_response = sdk.payment().get(payment_id)
             payment_info = payment_info_response.get("response", {})
             if payment_info.get("status") == "approved" and payment_info.get("external_reference"):
-                # O external_reference vem com o timestamp, precisamos extrair apenas o ID do pedido
                 pedido_id_str = payment_info["external_reference"].split('-')[0]
                 pedido_id = int(pedido_id_str)
 
@@ -223,14 +223,11 @@ def compra_errada():
 # ROTA TEMPORÁRIA PARA CRIAR O PRIMEIRO ADMIN - REMOVER DEPOIS DE USAR!
 @app.route("/setup-admin/<string:secret_key>")
 def setup_admin(secret_key):
-    # ERRO 1 CORRIGIDO: Deve buscar a chave "ADMIN_SETUP_KEY" que definimos na Render
     admin_key = os.getenv("ADMIN_SETUP_KEY")
 
-    # Verifica se a chave na URL é a mesma que está no ambiente
     if admin_key is None or secret_key != admin_key:
         return "Acesso negado: chave secreta inválida.", 403
 
-    # Coloque aqui o email do usuário que você cadastrou no Passo 1
     admin_email = "lgbalbinoserra@gmail.com"
     
     user = User.query.filter_by(email=admin_email).first()
