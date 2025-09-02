@@ -147,7 +147,6 @@ def checkout():
             )
             db.session.add(item)
         
-        # Usaremos a SITE_URL em produção, ou a NGROK_URL em desenvolvimento
         base_url = os.getenv("SITE_URL") or os.getenv("NGROK_URL")
         if not base_url:
             raise ValueError("Nenhuma URL base (SITE_URL ou NGROK_URL) foi configurada.")
@@ -188,6 +187,14 @@ def checkout():
 
 # --- Rotas de Webhook e Retorno do Pagamento ---
 
+@app.route("/verificar_pagamento/<int:pedido_id>")
+@login_required
+def verificar_pagamento(pedido_id):
+    pedido = Pedido.query.get_or_404(pedido_id)
+    if pedido.user_id != current_user.id:
+        return jsonify({'error': 'Acesso não autorizado'}), 403
+    return jsonify({'status': pedido.status})
+
 @app.route("/receber_notificacao_webhook", methods=["POST"])
 def receber_notificacao():
     data = request.json
@@ -214,12 +221,10 @@ def receber_notificacao():
 
 @app.route("/compracerta")
 def compra_certa():
-    # Pega o external_reference que o Mercado Pago nos envia de volta
     pedido_id_timestamp = request.args.get('external_reference')
     if pedido_id_timestamp:
         pedido_id = int(pedido_id_timestamp.split('-')[0])
     else:
-        # Se não encontrar, redireciona para a conta (plano B)
         return redirect(url_for('minha_conta'))
         
     return render_template("compracerta.html", pedido_id=pedido_id)
@@ -227,26 +232,3 @@ def compra_certa():
 @app.route("/compraerrada")
 def compra_errada():
     return render_template("compraerrada.html")
-
-# ROTA TEMPORÁRIA PARA CRIAR O PRIMEIRO ADMIN - REMOVER DEPOIS DE USAR!
-@app.route("/setup-admin/<string:secret_key>")
-def setup_admin(secret_key):
-    admin_key = os.getenv("ADMIN_SETUP_KEY")
-
-    if admin_key is None or secret_key != admin_key:
-        return "Acesso negado: chave secreta inválida.", 403
-
-    admin_email = "lgbalbinoserra@gmail.com"
-    
-    user = User.query.filter_by(email=admin_email).first()
-
-    if not user:
-        return f"Erro: Usuário com o email {admin_email} não encontrado.", 404
-
-    try:
-        user.is_admin = True
-        db.session.commit()
-        return f"Sucesso! O usuário {user.username} ({user.email}) agora é um administrador."
-    except Exception as e:
-        db.session.rollback()
-        return f"Ocorreu um erro ao atualizar o usuário: {e}", 500
