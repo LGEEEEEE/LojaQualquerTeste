@@ -1,0 +1,28 @@
+# # # Segurança # # #
+# Ignora o arquivo com variáveis de ambiente (SENHAS E CHAVES SECRETAS)
+.env
+
+# # # Ambiente Virtual # # #
+# Ignora pastas de ambiente virtual do Python
+venv/
+.venv/
+env/
+
+# # # Banco de Dados e Instância # # #
+# Ignora a pasta de instância do Flask e bancos de dados locais
+instance/
+*.db
+*.sqlite3
+
+# # # Arquivos de Cache do Python # # #
+# Ignora arquivos compilados e cache gerados pelo Python
+__pycache__/
+*.pyc
+
+# # # Arquivos de IDE e Sistema Operacional # # #
+# Ignora a pasta de configuração do VS Code
+.vscode/
+
+# Ignora arquivos de cache do macOS e Windows
+.DS_Store
+Thumbs.db

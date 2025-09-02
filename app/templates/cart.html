@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Carrinho de Compras</h1>
+    
+    {% if produtos %}
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">Produto</th>
+                    <th class="text-center">Preço Unitário</th>
+                    <th class="text-center" style="width: 15%;">Quantidade</th>
+                    <th class="text-center">Subtotal</th>
+                    <th class="text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos %}
+                <tr>
+                    <td>{{ produto.nome }}</td>
+                    <td class="text-center">R$ {{ "%.2f"|format(produto.preco) }}</td>
+                    <td class="text-center">
+                        <form action="{{ url_for('update_cart', produto_id=produto.id) }}" method="POST" class="d-flex justify-content-center">
+                            <input type="number" name="quantidade" class="form-control form-control-sm me-2" value="{{ cart[produto.id|string] }}" min="1">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Atualizar</button>
+                        </form>
+                    </td>
+                    <td class="text-center">R$ {{ "%.2f"|format(produto.preco * cart[produto.id|string]) }}</td>
+                    <td class="text-center">
+                        <form action="{{ url_for('remove_from_cart', produto_id=produto.id) }}" method="POST">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="text-end">
+            <h3>Total: R$ {{ "%.2f"|format(total) }}</h3>
+            <a href="{{ url_for('checkout') }}" class="btn btn-success btn-lg mt-3">Finalizar Compra e Pagar</a>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>O seu carrinho está vazio.</p>
+            <a href="{{ url_for('homepage') }}" class="btn btn-primary">Voltar à Loja</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

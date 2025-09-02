@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="alert alert-success text-center">
+    <h1>A sua compra foi concluída com sucesso!</h1>
+    <a href="{{ url_for('minha_conta') }}" class="btn btn-primary mt-3">Ver Meus Pedidos</a>
+</div>
+{% endblock %}

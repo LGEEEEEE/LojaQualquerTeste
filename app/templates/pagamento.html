@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h2 class="text-center mb-4">Finalizar Pagamento</h2>
+        
+        <div id="payment-brick-container"></div>
+
+        <div id="success-message" class="alert alert-success text-center" style="display: none;">
+            <h4>Pagamento aprovado!</h4>
+            <p>Você será redirecionado para a sua conta em alguns segundos...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    const publicKey = '{{ public_key }}';
+    const preferenceId = '{{ preference_id }}';
+    const pedidoId = '{{ pedido_id }}';
+    // VERSÃO CORRETA: |tojson garante que o número seja formatado para JavaScript (com ponto decimal)
+    const totalAmount = {{ total | tojson | safe }};
+
+    if (!publicKey || !preferenceId || !totalAmount) {
+        console.error("ERRO CRÍTICO: Chave Pública, ID da Preferência ou Valor Total não foram passados para o template!");
+        alert("Ocorreu um erro ao carregar o pagamento. Verifique o console para mais detalhes.");
+    } else {
+        const mp = new MercadoPago(publicKey);
+        const bricksBuilder = mp.bricks();
+        
+        const renderPaymentBrick = async (builder) => {
+            const settings = {
+                initialization: {
+                    amount: totalAmount,
+                    preferenceId: preferenceId,
+                },
+                customization: {
+                    visual: { style: { theme: 'default' } }
+                },
+                callbacks: {
+                    onReady: () => {
+                        console.log("Brick de pagamento pronto!");
+                        startPolling();
+                    },
+                    onError: (error) => {
+                        console.error("Erro no callback do Brick:", error);
+                    },
+                },
+            };
+            window.paymentBrickController = await builder.create('payment', 'payment-brick-container', settings);
+        };
+
+        renderPaymentBrick(bricksBuilder).catch(error => {
+            console.error("ERRO ao tentar renderizar o Payment Brick:", error);
+        });
+    }
+
+    // Funções para verificar o pagamento e redirecionar
+    function startPolling() {
+        const interval = setInterval(async () => {
+            try {
+                const response = await fetch(`/verificar_pagamento/${pedidoId}`);
+                const data = await response.json();
+                if (data.status === 'Pago') {
+                    clearInterval(interval);
+                    showSuccessAndRedirect();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar o estado do pagamento:', error);
+                clearInterval(interval);
+            }
+        }, 5000);
+    }
+
+    function showSuccessAndRedirect() {
+        document.getElementById('payment-brick-container').style.display = 'none';
+        document.getElementById('success-message').style.display = 'block';
+        setTimeout(() => {
+            window.location.href = "{{ url_for('minha_conta') }}";
+        }, 3000);
+    }
+</script>
+{% endblock %}

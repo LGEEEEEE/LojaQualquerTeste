@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Minha Conta</h1>
+    <h3 class="mb-4">Histórico de Pedidos</h3>
+
+    {% if pedidos %}
+        {% for pedido in pedidos %}
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between">
+                    <div>
+                        <strong>Pedido #{{ pedido.id }}</strong>
+                    </div>
+                    <div>
+                        Data: {{ pedido.data_pedido.strftime('%d/%m/%Y') }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for item in pedido.itens %}
+                            <li class="list-group-item">
+                                {{ item.quantidade }}x {{ item.produto.nome }} - R$ {{ "%.2f"|format(item.preco_unitario) }} cada
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <h5>Total: R$ {{ "%.2f"|format(pedido.total) }}</h5>
+                    <h5>
+                        {% if pedido.status == 'Pago' %}
+                            <span class="badge bg-success">Pago</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Pendente</span>
+                        {% endif %}
+                    </h5>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            Você ainda não fez nenhum pedido.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+<style>
+  
+</style>
+{% block content %}
+<div class="text-center mb-5">
+    <h1>Catálogo de Produtos</h1>
+</div>
+<div class="row">
+  {% for produto in produtos %}
+  <div class="col-md-4">
+    <div class="card shadow-sm mb-4">
+      <img src="{{ url_for('static', filename=produto.imagem) if produto.imagem else url_for('static', filename='img/default.jpg') }}" class="card-img-top" alt="{{ produto.nome }}">
+      <div class="card-body text-center">
+        <h5 class="card-title">{{ produto.nome }}</h5>
+        <p class="card-text text-success fw-bold">R$ {{ "%.2f"|format(produto.preco) }}</p>
+        
+        <form action="{{ url_for('add_to_cart', produto_id=produto.id) }}" method="POST">
+            <button type="submit" class="btn btn-primary w-100">Adicionar ao Carrinho</button>
+        </form>
+        </div>
+    </div>
+  </div>
+  {% else %}
+  <p class="text-center text-muted">Nenhum produto cadastrado.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}
