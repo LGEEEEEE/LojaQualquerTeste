@@ -1,7 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="alert alert-success text-center">
-    <h1>A sua compra foi concluída com sucesso!</h1>
-    <a href="{{ url_for('minha_conta') }}" class="btn btn-primary mt-3">Ver Meus Pedidos</a>
+<div class="container text-center">
+    <div id="processando-pagamento">
+        <h1><div class="spinner-border text-primary" role="status"></div> Processando seu pagamento...</h1>
+        <p class="lead text-muted">Aguarde um instante, estamos confirmando sua compra.</p>
+    </div>
+
+    <div id="pagamento-sucesso" style="display: none;">
+        <h1 class="text-success">A sua compra foi concluída com sucesso!</h1>
+        <p>O pedido #{{ pedido_id }} foi confirmado.</p>
+        <a href="{{ url_for('minha_conta') }}" class="btn btn-primary mt-3">Ver Meus Pedidos</a>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pega o ID do pedido que o Python nos enviou
+    const pedidoId = {{ pedido_id }};
+
+    // Função que verifica o status do pagamento
+    async function verificarStatus() {
+        try {
+            const response = await fetch(`/verificar_pagamento/${pedidoId}`);
+            const data = await response.json();
+
+            // Se o status for 'Pago', muda a tela
+            if (data.status === 'Pago') {
+                document.getElementById('processando-pagamento').style.display = 'none';
+                document.getElementById('pagamento-sucesso').style.display = 'block';
+                // Para a verificação
+                clearInterval(intervalo); 
+            }
+        } catch (error) {
+            console.error('Erro ao verificar status:', error);
+        }
+    }
+
+    // Inicia a verificação a cada 3 segundos
+    const intervalo = setInterval(verificarStatus, 3000);
+
+    // Para o caso de a página ficar aberta por muito tempo
+    setTimeout(() => {
+        clearInterval(intervalo);
+    }, 60000); // Para de verificar após 1 minuto
+
+</script>
 {% endblock %}

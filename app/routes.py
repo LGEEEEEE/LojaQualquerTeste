@@ -214,11 +214,15 @@ def receber_notificacao():
 
 @app.route("/compracerta")
 def compra_certa():
-    return render_template("compracerta.html")
-
-@app.route("/compraerrada")
-def compra_errada():
-    return render_template("compraerrada.html")
+    # Pega o external_reference que o Mercado Pago nos envia de volta
+    pedido_id_timestamp = request.args.get('external_reference')
+    if pedido_id_timestamp:
+        pedido_id = int(pedido_id_timestamp.split('-')[0])
+    else:
+        # Se não encontrar, redireciona para a conta (plano B)
+        return redirect(url_for('minha_conta'))
+        
+    return render_template("compracerta.html", pedido_id=pedido_id)
 
 # ROTA TEMPORÁRIA PARA CRIAR O PRIMEIRO ADMIN - REMOVER DEPOIS DE USAR!
 @app.route("/setup-admin/<string:secret_key>")
