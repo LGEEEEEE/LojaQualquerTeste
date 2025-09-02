@@ -132,7 +132,6 @@ def checkout():
             "currency_id": "BRL"
         })
 
-    # Bloco TRY começa aqui
     try:
         novo_pedido = Pedido(user_id=current_user.id, total=total_final, status='Pendente')
         db.session.add(novo_pedido)
@@ -171,23 +170,21 @@ def checkout():
         
         preference_response = sdk.preference().create(preference_data)
 
-        # Esta verificação é crucial
         if preference_response and preference_response.get("status") == 201:
             url_pagamento_mp = preference_response["response"]["init_point"]
             db.session.commit()
             session.pop('cart', None)
             return redirect(url_pagamento_mp)
         else:
-            # Se a criação falhar, imprimimos o erro e levantamos uma exceção
             print("🚨 ERRO AO CRIAR PREFERÊNCIA:", preference_response)
             raise ValueError("A resposta do Mercado Pago não foi bem-sucedida.")
 
-    # Bloco EXCEPT, corretamente alinhado, só será executado se houver um erro real
     except Exception as e:
         db.session.rollback()
         print(f"🚨 ERRO CRÍTICO NO CHECKOUT: {e}")
         flash('Ocorreu um erro inesperado ao processar seu pedido. Por favor, tente novamente.', 'danger')
         return redirect(url_for('cart'))
+
 # --- Rotas de Webhook e Retorno do Pagamento ---
 
 @app.route("/receber_notificacao_webhook", methods=["POST"])
@@ -199,7 +196,10 @@ def receber_notificacao():
             payment_info_response = sdk.payment().get(payment_id)
             payment_info = payment_info_response.get("response", {})
             if payment_info.get("status") == "approved" and payment_info.get("external_reference"):
-                pedido_id = int(payment_info["external_reference"])
+                # O external_reference vem com o timestamp, precisamos extrair apenas o ID do pedido
+                pedido_id_str = payment_info["external_reference"].split('-')[0]
+                pedido_id = int(pedido_id_str)
+
                 with app.app_context():
                     pedido = Pedido.query.get(pedido_id)
                     if pedido:
@@ -219,3 +219,29 @@ def compra_certa():
 @app.route("/compraerrada")
 def compra_errada():
     return render_template("compraerrada.html")
+
+# ROTA TEMPORÁRIA PARA CRIAR O PRIMEIRO ADMIN - REMOVER DEPOIS DE USAR!
+@app.route("/setup-admin/<string:secret_key>")
+def setup_admin(secret_key):
+    # ERRO 1 CORRIGIDO: Deve buscar a chave "ADMIN_SETUP_KEY" que definimos na Render
+    admin_key = os.getenv("ADMIN_SETUP_KEY")
+
+    # Verifica se a chave na URL é a mesma que está no ambiente
+    if admin_key is None or secret_key != admin_key:
+        return "Acesso negado: chave secreta inválida.", 403
+
+    # Coloque aqui o email do usuário que você cadastrou no Passo 1
+    admin_email = "lgbalbinoserra@gmail.com"
+    
+    user = User.query.filter_by(email=admin_email).first()
+
+    if not user:
+        return f"Erro: Usuário com o email {admin_email} não encontrado.", 404
+
+    try:
+        user.is_admin = True
+        db.session.commit()
+        return f"Sucesso! O usuário {user.username} ({user.email}) agora é um administrador."
+    except Exception as e:
+        db.session.rollback()
+        return f"Ocorreu um erro ao atualizar o usuário: {e}", 500
